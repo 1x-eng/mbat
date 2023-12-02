@@ -2,6 +2,7 @@ package microbatcher
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -29,9 +30,11 @@ func NewBatchScheduler(config MicroBatcherConfig, processor batchprocessor.Batch
 func (bs *BatchScheduler) Schedule(j *job.Job) {
 	select {
 	case bs.jobs <- j:
-		// Job successfully scheduled
+		log.Println("Job successfully scheduled")
 	default:
-		j.SetResult(job.JobResult{Error: fmt.Errorf("scheduler is either full or not accepting new jobs")})
+		errorMsg := "scheduler is either full or not accepting new jobs"
+		log.Println(errorMsg)
+		j.SetResult(job.JobResult{Error: fmt.Errorf(errorMsg)})
 	}
 }
 
@@ -42,13 +45,19 @@ func (bs *BatchScheduler) StartProcessing(wg *sync.WaitGroup) {
 
 func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 	if len(batch) == 0 {
+		log.Println("No jobs to process in batch")
 		return
 	}
 
+	log.Printf("Processing batch of %d jobs\n", len(batch))
 	results := bs.batchProcessor.ProcessBatch(batch)
 	for i, result := range results {
+		if result.Error != nil {
+			log.Printf("Error processing job: %v\n", result.Error)
+		}
 		batch[i].SetResult(result)
 	}
+	log.Println("Batch processing complete")
 }
 
 func (bs *BatchScheduler) processAnyRemainingJobs(batch *[]*job.Job) {
@@ -86,6 +95,7 @@ func (bs *BatchScheduler) newBatchTimer(previousTimer *time.Timer, duration time
 func (bs *BatchScheduler) batchingRoutine() {
 	defer bs.wg.Done()
 
+	log.Println("Batching routine started")
 	var batch []*job.Job
 	var batchTimer *time.Timer
 
@@ -95,15 +105,19 @@ func (bs *BatchScheduler) batchingRoutine() {
 		select {
 		case job, ok := <-bs.jobs:
 			if !ok {
+				log.Println("Jobs channel closed, processing remaining jobs")
 				bs.processAnyRemainingJobs(&batch)
 				return
 			}
+			log.Println("Job received, adding to batch")
 			bs.addToBatchAndProcessIfFull(job, &batch, batchTimer)
 
 		case <-batchTimer.C:
+			log.Println("Batch timer expired, processing any jobs in batch")
 			bs.processAnyRemainingJobs(&batch)
 
 		case <-bs.quit:
+			log.Println("Quit signal received, processing remaining jobs and stopping")
 			bs.processAnyRemainingJobs(&batch)
 			return
 		}
