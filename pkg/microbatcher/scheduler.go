@@ -40,51 +40,6 @@ func (bs *BatchScheduler) StartProcessing(wg *sync.WaitGroup) {
 	go bs.batchingRoutine()
 }
 
-func (bs *BatchScheduler) processAnyRemainingJobs(batch *[]*job.Job) {
-	if len(*batch) > 0 {
-		bs.processBatch(*batch)
-		*batch = nil // Clear the batch
-	}
-}
-
-func (bs *BatchScheduler) addToBatch(job *job.Job, batch *[]*job.Job, batchTimer *time.Timer) {
-	*batch = append(*batch, job)
-	if len(*batch) >= bs.config.BatchSize {
-		bs.processBatch(*batch)
-
-		// Clear the batch & reset interval.
-		*batch = nil
-		batchTimer.Reset(bs.config.BatchInterval)
-	}
-}
-
-func (bs *BatchScheduler) batchingRoutine() {
-	defer bs.wg.Done()
-
-	batchTimer := time.NewTimer(bs.config.BatchInterval)
-	defer batchTimer.Stop()
-
-	var batch []*job.Job
-	for {
-		select {
-		case job, ok := <-bs.jobs:
-			if !ok {
-				bs.processAnyRemainingJobs(&batch)
-				return
-			}
-			bs.addToBatch(job, &batch, batchTimer)
-
-		case <-batchTimer.C:
-			bs.processAnyRemainingJobs(&batch)
-			batchTimer.Reset(bs.config.BatchInterval)
-
-		case <-bs.quit:
-			bs.processAnyRemainingJobs(&batch)
-			return
-		}
-	}
-}
-
 func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 	if len(batch) == 0 {
 		return
@@ -96,8 +51,61 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 	}
 }
 
+func (bs *BatchScheduler) processAnyRemainingJobs(batch *[]*job.Job) {
+	if len(*batch) > 0 {
+		bs.processBatch(*batch)
+		*batch = nil // Clear the batch
+	}
+}
+
 func (bs *BatchScheduler) Stop() {
 	close(bs.quit)
 	close(bs.jobs)
 	bs.wg.Wait()
+}
+
+func (bs *BatchScheduler) addToBatchAndProcessIfFull(job *job.Job, batch *[]*job.Job, batchTimer *time.Timer) {
+	*batch = append(*batch, job)
+	if len(*batch) >= bs.config.BatchSize {
+		bs.processBatch(*batch)
+
+		// Clear the batch & reset interval.
+		*batch = nil
+	}
+}
+
+func (bs *BatchScheduler) newBatchTimer(previousTimer *time.Timer, duration time.Duration) *time.Timer {
+	if previousTimer != nil {
+		if !previousTimer.Stop() {
+			<-previousTimer.C // Drain the channel if the timer had already fired
+		}
+	}
+	return time.NewTimer(duration)
+}
+
+func (bs *BatchScheduler) batchingRoutine() {
+	defer bs.wg.Done()
+
+	var batch []*job.Job
+	var batchTimer *time.Timer
+
+	for {
+		batchTimer = bs.newBatchTimer(batchTimer, bs.config.BatchInterval)
+
+		select {
+		case job, ok := <-bs.jobs:
+			if !ok {
+				bs.processAnyRemainingJobs(&batch)
+				return
+			}
+			bs.addToBatchAndProcessIfFull(job, &batch, batchTimer)
+
+		case <-batchTimer.C:
+			bs.processAnyRemainingJobs(&batch)
+
+		case <-bs.quit:
+			bs.processAnyRemainingJobs(&batch)
+			return
+		}
+	}
 }
