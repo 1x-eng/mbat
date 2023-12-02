@@ -69,8 +69,8 @@ func (bs *BatchScheduler) processAnyRemainingJobs(batch *[]*job.Job) {
 
 func (bs *BatchScheduler) Stop() {
 	close(bs.quit)
-	close(bs.jobs)
 	bs.wg.Wait()
+	close(bs.jobs)
 }
 
 func (bs *BatchScheduler) addToBatchAndProcessIfFull(job *job.Job, batch *[]*job.Job, batchTimer *time.Timer) {
