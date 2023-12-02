@@ -90,7 +90,12 @@ func (bs *BatchScheduler) addToBatchAndProcessIfFull(job *job.Job, batch *[]*job
 
 		// Clear the batch & reset interval.
 		*batch = nil
-		log.Println("Batch processed, resetting batch timer")
+		if !batchTimer.Stop() {
+			log.Println("Batch timer not stopped, draining channel")
+			<-batchTimer.C // Drain the timer channel if it wasn't stopped
+		}
+		batchTimer.Reset(bs.config.BatchInterval)
+		log.Println("A full batch was processed, resetting batch timer")
 	}
 }
 
@@ -99,11 +104,9 @@ func (bs *BatchScheduler) batchingRoutine() {
 
 	log.Println("Batching routine started")
 	var batch []*job.Job
-	var batchTimer *time.Timer
+	var batchTimer = time.NewTimer(bs.config.BatchInterval)
 
 	for {
-		batchTimer = time.NewTimer(bs.config.BatchInterval)
-
 		select {
 		case job, ok := <-bs.jobs:
 			if !ok {
@@ -117,6 +120,8 @@ func (bs *BatchScheduler) batchingRoutine() {
 		case <-batchTimer.C:
 			log.Println("Batch timer expired, processing any jobs in batch")
 			bs.processAnyRemainingJobs(&batch)
+			log.Println("Remaining jobs in the batch, if any - processed, resetting batch timer")
+			batchTimer.Reset(bs.config.BatchInterval)
 
 		case <-bs.quit:
 			log.Println("Quit signal received, processing remaining jobs and stopping")

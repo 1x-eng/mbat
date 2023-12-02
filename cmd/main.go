@@ -39,7 +39,7 @@ func main() {
 	batcher.Start()
 
 	// todo: expose as a cli arg or maybe make a rest api?
-	j := job.NewJob("example")
+	j := job.NewJob("example1: data")
 	resultChan := batcher.Submit(j)
 
 	result := <-resultChan
