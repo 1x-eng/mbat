@@ -38,8 +38,9 @@ func (bs *BatchScheduler) Schedule(j *job.Job) {
 	}
 }
 
-func (bs *BatchScheduler) StartProcessing(wg *sync.WaitGroup) {
-	wg.Add(1)
+func (bs *BatchScheduler) StartProcessing() {
+	log.Printf("Starting processing with batch size %d and interval %s\n", bs.config.BatchSize, bs.config.BatchInterval.String())
+	bs.wg.Add(1)
 	go bs.batchingRoutine()
 }
 
@@ -62,34 +63,35 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 
 func (bs *BatchScheduler) processAnyRemainingJobs(batch *[]*job.Job) {
 	if len(*batch) > 0 {
+		log.Printf("Processing remaining %d jobs in batch\n", len(*batch))
 		bs.processBatch(*batch)
 		*batch = nil // Clear the batch
+	} else {
+		log.Println("No jobs to process in batch")
 	}
 }
 
 func (bs *BatchScheduler) Stop() {
+	log.Println("Sending quit signal to batching routine")
 	close(bs.quit)
+
 	bs.wg.Wait()
+	log.Println("Batch scheduler wait group finished")
+
 	close(bs.jobs)
+	log.Println("Jobs channel closed")
 }
 
 func (bs *BatchScheduler) addToBatchAndProcessIfFull(job *job.Job, batch *[]*job.Job, batchTimer *time.Timer) {
 	*batch = append(*batch, job)
 	if len(*batch) >= bs.config.BatchSize {
+		log.Printf("Batch full, processing batch of %d jobs\n", len(*batch))
 		bs.processBatch(*batch)
 
 		// Clear the batch & reset interval.
 		*batch = nil
+		log.Println("Batch processed, resetting batch timer")
 	}
-}
-
-func (bs *BatchScheduler) newBatchTimer(previousTimer *time.Timer, duration time.Duration) *time.Timer {
-	if previousTimer != nil {
-		if !previousTimer.Stop() {
-			<-previousTimer.C // Drain the channel if the timer had already fired
-		}
-	}
-	return time.NewTimer(duration)
 }
 
 func (bs *BatchScheduler) batchingRoutine() {
@@ -100,7 +102,7 @@ func (bs *BatchScheduler) batchingRoutine() {
 	var batchTimer *time.Timer
 
 	for {
-		batchTimer = bs.newBatchTimer(batchTimer, bs.config.BatchInterval)
+		batchTimer = time.NewTimer(bs.config.BatchInterval)
 
 		select {
 		case job, ok := <-bs.jobs:

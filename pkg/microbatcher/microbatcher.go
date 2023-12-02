@@ -1,7 +1,7 @@
 package microbatcher
 
 import (
-	"sync"
+	"log"
 	"time"
 
 	"github.com/1x-eng/mbat/pkg/batchprocessor"
@@ -15,7 +15,6 @@ type MicroBatcherConfig struct {
 
 type MicroBatcher struct {
 	scheduler *BatchScheduler
-	wg        sync.WaitGroup
 }
 
 func NewMicroBatcher(config MicroBatcherConfig, processor batchprocessor.BatchProcessor) *MicroBatcher {
@@ -31,10 +30,10 @@ func (mb *MicroBatcher) Submit(j *job.Job) <-chan job.JobResult {
 }
 
 func (mb *MicroBatcher) Start() {
-	mb.scheduler.StartProcessing(&mb.wg)
+	mb.scheduler.StartProcessing()
 }
 
 func (mb *MicroBatcher) Shutdown() {
+	log.Printf("Shutting down microbatcher")
 	mb.scheduler.Stop()
-	mb.wg.Wait()
 }
