@@ -61,7 +61,7 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 		batch[i].SetResult(result)
 		jobqueue.StoreProcessedJob(batch[i])
 		jobqueue.Dequeue(batch[i].ID)
-		log.Printf("Processed job %s. Job persisted to processed jobs cache\n", batch[i].ID)
+		log.Printf("Processed job %s. Job persisted to processed jobs cache & dequeued\n", batch[i].ID)
 
 	}
 	log.Println("Batch processing complete")
