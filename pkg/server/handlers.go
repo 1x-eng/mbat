@@ -51,3 +51,25 @@ func jobStatusHandler() fiber.Handler {
 		})
 	}
 }
+
+func queuedJobsHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		jobs := jobqueue.GetQueuedJobIds()
+		return c.JSON(fiber.Map{
+			"size":   len(jobs),
+			"status": "queued",
+			"jobs":   jobs,
+		})
+	}
+}
+
+func processedJobsHandler() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		jobs := jobqueue.GetAllProcessedJobs()
+		return c.JSON(fiber.Map{
+			"size":   len(jobs),
+			"status": "processed",
+			"jobs":   jobs,
+		})
+	}
+}

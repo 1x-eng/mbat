@@ -42,6 +42,17 @@ func FindJobByID(jobID string) (*job.Job, bool) {
 	return j, exists
 }
 
+func GetQueuedJobIds() []string {
+	mapLock.RLock()
+	defer mapLock.RUnlock()
+
+	var jobIDs []string
+	for id := range jobMap {
+		jobIDs = append(jobIDs, id)
+	}
+	return jobIDs
+}
+
 func DrainQueue() {
 	// Ideally, this is where I want to use a DLQ, but short on time for now. Will revisit.
 	for len(JobQueue) > 0 {

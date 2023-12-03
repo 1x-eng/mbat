@@ -26,3 +26,11 @@ func GetProcessedJobByID(jobID string) (*job.Job, bool) {
 	}
 	return nil, false
 }
+
+func GetAllProcessedJobs() []*job.Job {
+	var processedJobs []*job.Job
+	for _, item := range processedJobsCache.Items() {
+		processedJobs = append(processedJobs, item.Object.(*job.Job))
+	}
+	return processedJobs
+}
