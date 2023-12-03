@@ -60,8 +60,8 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 
 		batch[i].SetResult(result)
 		jobqueue.StoreProcessedJob(batch[i])
-		jobqueue.Dequeue() // Assumption: FIFO queue, and not considering some edge cases where a 'wrong' job could get dequeued.
-		log.Printf("Processed job %s. Job persisted & dequeued\n", batch[i].ID)
+		jobqueue.Dequeue(batch[i].ID)
+		log.Printf("Processed job %s. Job persisted to processed jobs cache\n", batch[i].ID)
 
 	}
 	log.Println("Batch processing complete")

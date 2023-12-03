@@ -1,6 +1,7 @@
 package jobqueue
 
 import (
+	"log"
 	"time"
 
 	"github.com/1x-eng/mbat/pkg/job"
@@ -15,6 +16,7 @@ func InitProcessedJobsCache(defaultTTL time.Duration, cleanup time.Duration) {
 
 func StoreProcessedJob(j *job.Job) {
 	processedJobsCache.Set(j.ID.String(), j, cache.DefaultExpiration)
+	log.Printf("Stored job %s in processed jobs cache\n", j.ID)
 }
 
 func GetProcessedJobByID(jobID string) (*job.Job, bool) {

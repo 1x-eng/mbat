@@ -18,6 +18,12 @@ func NewMicrobatchingServer(batcher *microbatcher.MicroBatcher) *fiber.App {
 	return app
 }
 
+func worker(batcher *microbatcher.MicroBatcher) {
+	for job := range jobqueue.JobQueue {
+		batcher.Submit(job)
+	}
+}
+
 func Start(app *fiber.App, batcher *microbatcher.MicroBatcher, port string, queueSize int, processedJobsCacheTTL time.Duration, processedJobsCacheCleanup time.Duration) {
 	jobqueue.InitQueue(queueSize)
 	jobqueue.InitProcessedJobsCache(processedJobsCacheTTL, processedJobsCacheCleanup)
@@ -27,6 +33,8 @@ func Start(app *fiber.App, batcher *microbatcher.MicroBatcher, port string, queu
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
+
+	go worker(batcher)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

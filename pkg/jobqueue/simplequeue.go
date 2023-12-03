@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/1x-eng/mbat/pkg/job"
+	"github.com/google/uuid"
 )
 
 var (
@@ -24,14 +25,14 @@ func Enqueue(j *job.Job) {
 	mapLock.Unlock()
 
 	JobQueue <- j
+	log.Printf("Enqueued job %s\n", j.ID)
 }
 
-func Dequeue() *job.Job {
-	j := <-JobQueue
+func Dequeue(jobID uuid.UUID) {
 	mapLock.Lock()
-	delete(jobMap, j.ID.String())
-	mapLock.Unlock()
-	return j
+	defer mapLock.Unlock()
+	delete(jobMap, jobID.String())
+	log.Printf("Dequeued job %s\n", jobID)
 }
 
 func FindJobByID(jobID string) (*job.Job, bool) {
