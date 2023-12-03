@@ -18,5 +18,5 @@ func main() {
 	mbatcher.Start()
 
 	app := server.NewMicrobatchingServer(mbatcher)
-	server.Start(app, mbatcher, cfg.Port, cfg.QueueSize)
+	server.Start(app, mbatcher, cfg.Port, cfg.QueueSize, cfg.ProcessedJobsCacheTTL, cfg.ProcessedJobsCacheCleanup)
 }

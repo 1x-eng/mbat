@@ -57,9 +57,11 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 		if result.Error != nil {
 			log.Printf("Error processing job: %v\n", result.Error)
 		}
+
 		batch[i].SetResult(result)
-		job.StoreProcessedJob(jobqueue.Dequeue())
-		log.Printf("Processed job %s. Job dequeued & persisted\n", batch[i].ID)
+		jobqueue.StoreProcessedJob(batch[i])
+		jobqueue.Dequeue() // Assumption: FIFO queue, and not considering some edge cases where a 'wrong' job could get dequeued.
+		log.Printf("Processed job %s. Job persisted & dequeued\n", batch[i].ID)
 
 	}
 	log.Println("Batch processing complete")

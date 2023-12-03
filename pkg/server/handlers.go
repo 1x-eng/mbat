@@ -32,14 +32,15 @@ func jobStatusHandler() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid job ID"})
 		}
 
-		queuedJob, exists := jobqueue.FindJobByID(jobID)
+		queuedJob, exists := jobqueue.FindJobByID(jobID.String())
 		if !exists {
-			processedJob, exists := job.GetProcessedJobByID(jobID)
-			if !exists {
+			processedJob, found := jobqueue.GetProcessedJobByID(jobID.String())
+			if !found {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Job not found"})
 			}
+
 			return c.JSON(fiber.Map{
-				"status": "completed",
+				"status": "processed",
 				"result": processedJob.GetResult(),
 			})
 		}

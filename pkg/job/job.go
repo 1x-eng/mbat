@@ -41,34 +41,3 @@ func NewJob(data interface{}) *Job {
 		resultChan: make(chan JobResult, 1),
 	}
 }
-
-// a slice as a temporary storage for all processed jobs.
-var processedJobs []*Job
-
-// and a poor man's DLQ. Something quick and not so pretty.
-var deadJobs []*Job
-
-func GetProcessedJobs() []*Job {
-	return processedJobs
-}
-
-func GetProcessedJobByID(jobID uuid.UUID) (*Job, bool) {
-	for _, j := range processedJobs {
-		if j.ID == jobID {
-			return j, true
-		}
-	}
-	return nil, false
-}
-
-func StoreProcessedJob(j *Job) {
-	processedJobs = append(processedJobs, j)
-}
-
-func GetDeadJobs() []*Job {
-	return deadJobs
-}
-
-func StoreDeadJob(j *Job) {
-	deadJobs = append(deadJobs, j)
-}

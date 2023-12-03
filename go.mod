@@ -21,5 +21,6 @@ require (
 require (
 	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	golang.org/x/sys v0.14.0 // indirect
 )
