@@ -7,4 +7,5 @@ import (
 
 func setupRoutes(app *fiber.App, batcher *microbatcher.MicroBatcher) {
 	app.Post("/job/submit", jobSubmitHandler(batcher))
+	app.Get("/job/status/:jobID", jobStatusHandler())
 }

@@ -14,6 +14,7 @@ type Config struct {
 	MicroBatcherConfig microbatcher.MicroBatcherConfig
 	Processor          batchprocessor.BatchProcessor
 	Port               string
+	QueueSize          int
 }
 
 func Load() (*Config, error) {
@@ -36,6 +37,11 @@ func Load() (*Config, error) {
 		port = "8080"
 	}
 
+	queueSize, err := strconv.Atoi(os.Getenv("QUEUE_SIZE"))
+	if err != nil {
+		queueSize = 100
+	}
+
 	return &Config{
 		MicroBatcherConfig: microbatcher.MicroBatcherConfig{
 			BatchSize:     batchSize,
@@ -43,5 +49,6 @@ func Load() (*Config, error) {
 		},
 		Processor: batchprocessor.NewMockBatchProcessor(),
 		Port:      port,
+		QueueSize: queueSize,
 	}, nil
 }

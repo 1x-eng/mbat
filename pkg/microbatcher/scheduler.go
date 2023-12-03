@@ -8,6 +8,7 @@ import (
 
 	"github.com/1x-eng/mbat/pkg/batchprocessor"
 	"github.com/1x-eng/mbat/pkg/job"
+	"github.com/1x-eng/mbat/pkg/jobqueue"
 )
 
 type BatchScheduler struct {
@@ -57,6 +58,9 @@ func (bs *BatchScheduler) processBatch(batch []*job.Job) {
 			log.Printf("Error processing job: %v\n", result.Error)
 		}
 		batch[i].SetResult(result)
+		job.StoreProcessedJob(jobqueue.Dequeue())
+		log.Printf("Processed job %s. Job dequeued & persisted\n", batch[i].ID)
+
 	}
 	log.Println("Batch processing complete")
 }

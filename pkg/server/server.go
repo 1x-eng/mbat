@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/1x-eng/mbat/pkg/jobqueue"
 	"github.com/1x-eng/mbat/pkg/microbatcher"
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,11 +17,13 @@ func NewMicrobatchingServer(batcher *microbatcher.MicroBatcher) *fiber.App {
 	return app
 }
 
-func Start(app *fiber.App, batcher *microbatcher.MicroBatcher, port string) {
+func Start(app *fiber.App, batcher *microbatcher.MicroBatcher, port string, queueSize int) {
 	go func() {
 		if err := app.Listen(":" + port); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}
+		jobqueue.InitQueue(queueSize)
+		log.Printf("Microbatching server started on port %s", port)
 	}()
 
 	quit := make(chan os.Signal, 1)
