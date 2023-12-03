@@ -18,6 +18,12 @@ func NewMicrobatchingServer(batcher *microbatcher.MicroBatcher) *fiber.App {
 	return app
 }
 
+func fiberApp(app *fiber.App, port string) {
+	if err := app.Listen(":" + port); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
+}
+
 func worker(batcher *microbatcher.MicroBatcher) {
 	for job := range jobqueue.JobQueue {
 		batcher.Submit(job)
@@ -28,12 +34,7 @@ func Start(app *fiber.App, batcher *microbatcher.MicroBatcher, port string, queu
 	jobqueue.InitQueue(queueSize)
 	jobqueue.InitProcessedJobsCache(processedJobsCacheTTL, processedJobsCacheCleanup)
 
-	go func() {
-		if err := app.Listen(":" + port); err != nil {
-			log.Fatalf("Server failed: %v", err)
-		}
-	}()
-
+	go fiberApp(app, port)
 	go worker(batcher)
 
 	quit := make(chan os.Signal, 1)
