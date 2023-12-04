@@ -1,0 +1,91 @@
+info:
+  contact: {}
+paths:
+  /job/status/{jobID}:
+    get:
+      consumes:
+      - application/json
+      description: Checks whether the job is queued or processed and returns the status
+        along with the job result if processed.
+      parameters:
+      - description: Job ID
+        in: path
+        name: jobID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Job Status
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid Job ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Job Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check job status
+  /job/submit:
+    post:
+      consumes:
+      - application/json
+      description: Expects a JSON object with a "data" field as payload, enqueues
+        job to the queue which gets picked up by worker running in a separate goroutine;
+        the worker adds the job to the batch. This API returns the jobID of the submitted
+        job, which can be used to query the status of the job.
+      parameters:
+      - description: Job Data
+        in: body
+        name: data
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Submit a new job that gets enqueued & added to the batch by worker
+  /jobs/processed:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all jobs that have been processed along with
+        their results.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Processed Jobs
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List processed jobs
+  /jobs/queued:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all job IDs that are currently in the queue.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Queued Jobs
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List queued jobs
+swagger: "2.0"

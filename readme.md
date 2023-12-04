@@ -29,8 +29,18 @@ go build -o ./bin/mbat ./cmd/
 ./bin/mbat
 ```
 
-## API Endpoints (TODO: swagger specs)
+## API Endpoints
 - Submit Job: `POST /job/submit`
 - Job Status: `GET /job/status/:jobID`
 - Queued Jobs: `GET /jobs/queue`
 - Processed Jobs: `GET /jobs/processed`
+
+## Swagger / OpenAPI
+- µ-batching uses `swaggo` cli to generate swagger specs. Install swaggo cli using - `go install github.com/swaggo/swag/cmd/swag@latest`
+- To generate or refresh swagger specs, `swag init -g ./pkg/server/handlers.go`
+- µ-batching also uses fiber-swagger to render swaghger UI.
+- Once the project is built and run, visit `<api>/swagger` to view swagger UI.
+
+## TODO
+- Integrate github actions / promote CI/CD and abstract swaggo / fiber-swagger
+- A whole lot of tests :P
